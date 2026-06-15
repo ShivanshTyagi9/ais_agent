@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+maps/*.html
+.venv/
+venv/
+*.egg-info/
+dist/
+build/

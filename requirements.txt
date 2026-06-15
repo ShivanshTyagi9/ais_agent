@@ -1,0 +1,8 @@
+psycopg2-binary>=2.9
+python-dotenv>=1.0
+pandas>=2.0
+tqdm>=4.65
+openai>=1.30
+folium>=0.16
+streamlit>=1.35
+streamlit-folium>=0.20

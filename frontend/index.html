@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIS Vessel Intelligence</title>
+    <meta name="description" content="AI-powered maritime vessel tracking, route analysis, and dark-activity detection">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Geoman CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- ─── Top Header Bar ─── -->
+    <header id="app-header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">🚢</span>
+                <div class="logo-text">
+                    <h1>AIS Vessel Intelligence</h1>
+                    <span class="logo-sub">Maritime Tracking & Dark Activity Detection</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="stat-pills" id="stat-pills">
+                <div class="stat-pill">
+                    <span class="stat-dot active"></span>
+                    <span class="stat-label">Positions</span>
+                    <span class="stat-value" id="stat-positions">—</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-dot active"></span>
+                    <span class="stat-label">Vessels</span>
+                    <span class="stat-value" id="stat-vessels">—</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-dot warning"></span>
+                    <span class="stat-label">Gaps</span>
+                    <span class="stat-value" id="stat-gaps">—</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ─── Main Layout ─── -->
+    <main id="app-main">
+        <!-- ─── Left Panel: Chat ─── -->
+        <aside id="chat-panel">
+            <div class="panel-header">
+                <span class="material-icons-round">chat</span>
+                <span>AI Analyst</span>
+                <button class="icon-btn" id="btn-clear-chat" title="Clear conversation">
+                    <span class="material-icons-round">delete_outline</span>
+                </button>
+            </div>
+
+            <div id="chat-messages">
+                <!-- Welcome message -->
+                <div class="welcome-card">
+                    <div class="welcome-icon">🤖</div>
+                    <h3>AIS Intelligence Analyst</h3>
+                    <p>Ask me about vessel movements, dark activity, positions, or generate visualizations on the map.</p>
+                    <div class="suggestions" id="suggestions">
+                        <button class="suggestion-chip" data-query="Where was OCEAN WARLOCK on Dec 24, 2025?">
+                            📍 Where was OCEAN WARLOCK?
+                        </button>
+                        <button class="suggestion-chip" data-query="Show me the track of MMSI 316004661 on Dec 24, 2025">
+                            🗺️ Track MMSI 316004661
+                        </button>
+                        <button class="suggestion-chip" data-query="Find vessels near latitude 47.56, longitude -122.34 at midnight Dec 24, 2025">
+                            🔍 Vessels near Seattle
+                        </button>
+                        <button class="suggestion-chip" data-query="Get info about vessel JACK BINION">
+                            ℹ️ Vessel info
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chat-input-area">
+                <div class="input-wrapper">
+                    <textarea id="chat-input" placeholder="Ask about vessels, tracks, dark activity..." rows="1"></textarea>
+                    <button id="btn-send" title="Send message">
+                        <span class="material-icons-round">send</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ─── Right Panel: Map + Controls ─── -->
+        <section id="map-section">
+            <!-- Map toolbar -->
+            <div id="map-toolbar">
+                <div class="toolbar-left">
+                    <!-- Vessel search -->
+                    <div class="search-container">
+                        <span class="material-icons-round search-icon">search</span>
+                        <input type="text" id="vessel-search" placeholder="Search vessel name or MMSI..." autocomplete="off">
+                        <div id="search-results" class="search-dropdown hidden"></div>
+                    </div>
+                </div>
+                <div class="toolbar-center">
+                    <!-- Time range picker -->
+                    <div class="time-range">
+                        <label>
+                            <span class="material-icons-round">schedule</span>
+                            <input type="datetime-local" id="time-start" value="2025-12-24T00:00">
+                        </label>
+                        <span class="range-sep">→</span>
+                        <label>
+                            <input type="datetime-local" id="time-end" value="2025-12-24T23:59">
+                        </label>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <button class="toolbar-btn" id="btn-load-track" title="Load track on map" disabled>
+                        <span class="material-icons-round">route</span>
+                        <span>Load Track</span>
+                    </button>
+                    <button class="toolbar-btn" id="btn-detect-gaps" title="Detect dark activity" disabled>
+                        <span class="material-icons-round">visibility_off</span>
+                        <span>Dark Activity</span>
+                    </button>
+                    <button class="toolbar-btn danger" id="btn-clear-map" title="Clear map layers">
+                        <span class="material-icons-round">layers_clear</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Map container -->
+            <div id="map"></div>
+
+            <!-- Map info overlay -->
+            <div id="map-info-panel" class="hidden">
+                <button class="close-btn" id="btn-close-info">
+                    <span class="material-icons-round">close</span>
+                </button>
+                <div id="map-info-content"></div>
+            </div>
+
+            <!-- Map legend -->
+            <div id="map-legend">
+                <div class="legend-title">Track Speed</div>
+                <div class="legend-item"><span class="legend-line" style="background:#ef4444;"></span> Stopped (&lt;0.5 kn)</div>
+                <div class="legend-item"><span class="legend-line" style="background:#f59e0b;"></span> Slow (&lt;3 kn)</div>
+                <div class="legend-item"><span class="legend-line" style="background:#10b981;"></span> Normal (3–10 kn)</div>
+                <div class="legend-item"><span class="legend-line" style="background:#3b82f6;"></span> Fast (&gt;10 kn)</div>
+                <div class="legend-item"><span class="legend-line dashed" style="background:#ef4444;"></span> AIS Gap</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Processing...</div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Geoman JS -->
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+    <script src="/static/app.js?v=1.0.1"></script>
+</body>
+</html>
